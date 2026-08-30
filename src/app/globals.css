@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@200;300;400&display=swap');
+
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Branco Luxuoso (Textura de Papel Fine Art / Off-White) */
+    --color-primary: #F6F4F0; 
+    
+    /* Grafite Elegante (Suave para os olhos, não é preto puro) */
+    --color-secondary: #2A2A2A; 
+    
+    /* Champanhe Mudo (Dourado sofisticado para detalhes) */
+    --color-tertiary: #B59A6D; 
+  }
+
+  body {
+    background-color: var(--color-primary);
+    color: var(--color-secondary);
+    font-family: 'Montserrat', sans-serif;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    overflow-x: hidden; /* Elimina qualquer vazamento horizontal */
+    max-width: 100%;
+  }
+  
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', serif;
+  }
+}
