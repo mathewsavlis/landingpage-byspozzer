@@ -174,8 +174,8 @@ export default function HeroSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none"
         >
-          <source src="/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
-          <source src="/hero-pc.mp4" type="video/mp4" media="(min-width: 768px)" />
+          <source src="/landingpage-byspozzer/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
+          <source src="/landingpage-byspozzer/hero-pc.mp4" type="video/mp4" media="(min-width: 768px)" />
         </video>
 
         {/* PELÍCULAS: Escurecimento bastante reduzido (de 30 para 10) para revelar bem o vídeo */}
