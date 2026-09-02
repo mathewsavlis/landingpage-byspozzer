@@ -1,169 +1,235 @@
 'use client';
-import { useEffect, useRef } from 'react';
+
+import { useEffect, useRef, memo } from 'react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { heroData } from '@/data/heroData';
 
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-  ScrollTrigger.config({ ignoreMobileResize: true });
-}
+const GalleryItem = memo(({ item, index, total }) => {
+  return (
+    <article
+      title={item.title}
+      className="gallery-item relative w-[85vw] md:w-[45vw] lg:w-[35vw] h-[80svh] md:h-[75vh] flex items-center justify-center cursor-pointer overflow-hidden rounded-sm border border-[#F6F4F0]/15 shrink-0 bg-black/20"
+    >
+      <img
+        src={item.src}
+        alt={item.title}
+        loading="eager"
+        className="inner-parallax-img absolute inset-0 w-full h-full object-cover will-change-transform transform-gpu"
+      />
+      <div className="absolute inset-0 bg-black/10 transition-colors hover:bg-transparent z-10" />
+      <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 text-[#F6F4F0] font-light text-sm tracking-[0.2em] z-20 drop-shadow-md">
+        {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+      </div>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:bottom-8 text-[#F6F4F0] font-medium text-xs tracking-[0.4em] uppercase z-20 whitespace-nowrap drop-shadow-md">
+        {item.title}
+      </div>
+    </article>
+  );
+});
+GalleryItem.displayName = 'GalleryItem';
 
 export default function HeroSection() {
   const containerRef = useRef(null);
+  const layerRef = useRef(null);
+  const videoRef = useRef(null);
   const heroContentRef = useRef(null);
   const blurOverlayRef = useRef(null);
-  const portfolioRef = useRef(null);
+  const portfolioHeaderRef = useRef(null);
+  const portfolioTitleGroupRef = useRef(null);
   const galleryRowRef = useRef(null);
+  const progressBarRef = useRef(null);
 
   useEffect(() => {
-    let ctx = gsap.context(() => {
-      
-      // 1. Animação de Entrada Inicial ao carregar a página
-      gsap.fromTo(heroContentRef.current.children, 
-        { y: 50, autoAlpha: 0 }, 
-        { y: 0, autoAlpha: 1, duration: 1.5, stagger: 0.2, ease: 'power3.out', delay: 0.3 }
-      );
+    if (typeof window !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger);
+      ScrollTrigger.config({ ignoreMobileResize: true });
+    }
 
-      // 2. Timeline de Scroll Principal
+    // Força o autoplay no mobile de maneira absoluta
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      const playRes = videoRef.current.play();
+      if (playRes !== undefined) {
+        playRes.catch(e => console.warn("Autoplay bloqueado:", e));
+      }
+    }
+
+    let ctx = gsap.context(() => {
+      if (!containerRef.current) return;
+
+      const galleryItems = gsap.utils.toArray('.gallery-item');
+      const innerImages = gsap.utils.toArray('.inner-parallax-img');
+      const heroElements = gsap.utils.toArray('.hero-anim-item');
+
+      if (heroElements.length > 0) {
+        gsap.fromTo(heroElements,
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, stagger: 0.3, ease: 'power4.out', duration: 2.5, delay: 0.2, force3D: true }
+        );
+      }
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
-          // Aumentamos o percurso para 400% para acomodar as animações de entrada, meio e saída com bastante respiro
-          end: "+=400%", 
-          pin: true, 
-          scrub: 1.2, 
-          invalidateOnRefresh: true, 
+          end: "+=450%",
+          pin: true,
+          scrub: 0.7,
+          invalidateOnRefresh: true,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            if (!galleryRowRef.current || galleryItems.length === 0) return;
+            const progress = self.progress;
+
+            if (progress > 0.25 && progress < 0.8) {
+              const center = window.innerWidth / 2;
+              const rowX = gsap.getProperty(galleryRowRef.current, "x");
+
+              galleryItems.forEach((item, i) => {
+                const itemCenter = (item.offsetLeft + rowX) + (item.offsetWidth / 2);
+                const scale = 1.15 - (Math.abs(center - itemCenter) / window.innerWidth) * 0.15;
+                const clampedScale = Math.max(1, Math.min(1.15, scale));
+
+                gsap.set(innerImages[i], { scale: clampedScale, force3D: true });
+              });
+            }
+          }
         }
       });
 
-      // ==========================================
-      // FASE 1: MERGULHO (Texto sai, Galeria entra)
-      // ==========================================
-      // O texto vem na direção da câmara (scale: 1.15) e sobe, criando profundidade
-      tl.to(heroContentRef.current, { 
-        y: -100, 
-        scale: 1.15, 
-        autoAlpha: 0, 
-        duration: 1.5, 
-        ease: "power2.inOut" 
-      }, 0);
-      
-      tl.to(blurOverlayRef.current, { autoAlpha: 1, duration: 1.5, ease: "power2.inOut" }, 0);
-      
-      // A galeria vem do fundo (scale: 0.85) e assume o tamanho normal
-      tl.fromTo(portfolioRef.current, 
-        { autoAlpha: 0, y: 80, scale: 0.85 }, 
-        { autoAlpha: 1, y: 0, scale: 1, duration: 1.5, ease: "power2.out" },
-        0.3 // Começa a aparecer um pouco depois do texto começar a sumir (sobreposição)
-      );
+      tl.to(heroContentRef.current, { y: -100, autoAlpha: 0, duration: 1, ease: "power2.inOut" }, 0);
+      tl.to(blurOverlayRef.current, { autoAlpha: 1, duration: 1, ease: "power2.inOut" }, 0);
 
-      // ==========================================
-      // FASE 2: SCROLL HORIZONTAL
-      // ==========================================
-      tl.to(galleryRowRef.current, {
-        x: () => {
-          if (!galleryRowRef.current) return 0;
-          return -(galleryRowRef.current.scrollWidth - document.documentElement.clientWidth + 80);
-        },
-        ease: "power1.inOut", 
-        duration: 4 
-      }, "+=0.2"); // Pausa milimétrica antes de começar a rolar para o lado
+      tl.fromTo(portfolioHeaderRef.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.1 }, 0.5);
+      tl.fromTo(portfolioTitleGroupRef.current, { y: 0, autoAlpha: 0 }, { autoAlpha: 1, y: 0, duration: 1, ease: "expo.out" }, 0.5);
 
-      // ==========================================
-      // FASE 3: SAÍDA CINEMATOGRÁFICA (Fim do layer)
-      // ==========================================
-      // Em vez de soltar a página de repente, a galeria sobe e desvanece suavemente
-      tl.to(portfolioRef.current, {
-        y: -100,
-        scale: 1.05,
-        autoAlpha: 0,
-        duration: 1.5,
-        ease: "power2.inOut"
-      }, "+=0.5"); // O "+=0.5" é o respiro! O utilizador vê a última foto parar, e só depois ela sai
+      // Movimenta a BARRA inteira para cima (sem diminuir a largura dela)
+      tl.to(portfolioTitleGroupRef.current, {
+        y: () => window.innerWidth < 768 ? -window.innerHeight * 0.45 : -window.innerHeight * 0.43,
+        duration: 1.1, ease: "power3.inOut"
+      }, 1.5);
 
-      // Opcional: remover o blur do fundo enquanto a galeria sai, para preparar a próxima secção
-      tl.to(blurOverlayRef.current, { autoAlpha: 0, duration: 1.5, ease: "power2.inOut" }, "<");
+      // Diminui elegantemente APENAS os textos dentro da barra
+      tl.to('.inner-title-content', {
+        scale: 0.78,
+        duration: 1.1, ease: "power3.inOut"
+      }, 1.5);
+
+      if (galleryItems.length > 0) {
+        tl.fromTo(galleryItems,
+          { autoAlpha: 0, x: 80 },
+          { autoAlpha: 1, x: 0, duration: 1, stagger: 0.1, ease: "expo.out", force3D: true }, 1.6
+        );
+      }
+
+      // CORREÇÃO BARRA: Largura total, vidro quase transparente, bordas horizontais sutis
+      tl.to(portfolioTitleGroupRef.current, {
+        backgroundColor: "rgba(255, 255, 255, 0.03)", // Quase 100% transparente
+        backdropFilter: "blur(12px)", // Vidro jateado leve
+        WebkitBackdropFilter: "blur(12px)",
+        borderTopColor: "rgba(255, 255, 255, 0.1)", // Borda apenas em cima
+        borderBottomColor: "rgba(255, 255, 255, 0.1)", // e embaixo
+        duration: 0.8, ease: "power1.inOut"
+      }, 2.5);
+
+      if (galleryRowRef.current) {
+        const scrollDist = () => -(galleryRowRef.current.scrollWidth - window.innerWidth + (window.innerWidth * 0.12));
+        tl.to(galleryRowRef.current, { x: scrollDist, ease: "none", duration: 4, force3D: true }, 2.5);
+      }
+      tl.to(progressBarRef.current, { scaleX: 1, ease: "none", duration: 4 }, 2.5);
+
+      // FASE 4: SAÍDA SUAVE
+      tl.to([galleryRowRef.current, progressBarRef.current], { autoAlpha: 0, duration: 1, ease: "power2.inOut" }, 5.0);
+      tl.to(portfolioTitleGroupRef.current, { autoAlpha: 0, duration: 1, ease: "power2.inOut" }, 5.2);
+      tl.to(containerRef.current, { backgroundColor: "#F6F4F0", duration: 1, ease: "none" }, 5.5);
+      tl.to(layerRef.current, { borderColor: "transparent", autoAlpha: 0, duration: 1, ease: "power2.inOut" }, 5.5);
 
     }, containerRef);
 
-    return () => ctx.revert(); 
+    return () => ctx.revert();
   }, []);
 
   return (
-    <section 
-      ref={containerRef} 
-      aria-label="Apresentação Principal"
-      className="relative w-full h-[100svh] flex flex-col items-center justify-center overflow-hidden bg-[#2A2A2A]"
-    >
-      
-      <video 
-        autoPlay 
-        loop 
-        muted 
-        playsInline 
-        className="absolute inset-0 w-full h-full object-cover z-0"
-        aria-hidden="true"
+    <section ref={containerRef} aria-label="Apresentação Principal" className="relative w-full h-[100svh] bg-[#2A2A2A]">
+      <div
+        ref={layerRef}
+        className="absolute inset-0 w-full h-full flex flex-col items-center justify-center overflow-hidden origin-center will-change-transform transform-gpu border border-[#F6F4F0]/15"
       >
-        <source src="/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
-        <source src="/hero-pc.mp4" type="video/mp4" media="(min-width: 768px)" />
-      </video>
+        {/* VÍDEO: Configurado estritamente para autoplay contínuo e looping em todas as plataformas */}
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          defaultMuted
+          playsInline
+          webkit-playsinline="true"
+          x5-video-player-type="h5"
+          x5-video-player-fullscreen="false"
+          disablePictureInPicture
+          disableRemotePlayback
+          preload="auto"
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none"
+        >
+          <source src="/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
+          <source src="/hero-pc.mp4" type="video/mp4" media="(min-width: 768px)" />
+        </video>
 
-      <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none"></div>
-      <div ref={blurOverlayRef} className="absolute inset-0 bg-[#2A2A2A]/60 backdrop-blur-xl opacity-0 z-10 pointer-events-none"></div>
+        {/* PELÍCULAS: Escurecimento bastante reduzido (de 30 para 10) para revelar bem o vídeo */}
+        <div className="absolute inset-0 bg-black/10 z-10 pointer-events-none" />
+        {/* O overlay que entra com a galeria agora tem desfoque, mas é menos escuro (bg-[#2A2A2A]/40) */}
+        <div ref={blurOverlayRef} className="absolute inset-0 bg-[#2A2A2A]/40 backdrop-blur-md opacity-0 z-10 pointer-events-none will-change-[opacity]" />
 
-      {/* TEXTO INICIAL */}
-      <header 
-        ref={heroContentRef} 
-        className="absolute z-20 text-center px-4 md:px-12 max-w-5xl mx-auto flex flex-col items-center justify-center w-full"
-      >
-        <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-extralight mb-6 leading-[1.1] text-[#F6F4F0] drop-shadow-lg opacity-0 tracking-tight">
-          {heroData.heading.part1} <br className="hidden md:block" />
-          <span className="italic font-serif text-[#B59A6D] ml-2">{heroData.heading.part2}</span>
-        </h1>
-        
-        <p className="text-sm md:text-base lg:text-lg font-light tracking-wide mb-10 max-w-[90%] md:max-w-2xl text-[#F6F4F0]/90 leading-relaxed drop-shadow-md opacity-0">
-          {heroData.subheading}
-        </p>
-        
-        <div className="opacity-0">
-          <a 
-            href={heroData.ctaButton.link} 
-            title={heroData.ctaButton.text}
-            className="inline-block border border-[#F6F4F0]/60 text-[#F6F4F0] hover:bg-[#F6F4F0] hover:text-[#2A2A2A] px-8 md:px-12 py-4 uppercase tracking-[0.3em] text-xs md:text-sm font-medium transition-all duration-500"
-          >
-            {heroData.ctaButton.text}
-          </a>
-        </div>
-      </header>
-
-      {/* GALERIA HORIZONTAL */}
-      <div ref={portfolioRef} className="absolute inset-0 z-20 flex flex-col justify-center opacity-0 pointer-events-none">
-        <div className="px-6 md:px-12 lg:px-24 mb-10 mt-12 md:mt-0 pointer-events-auto">
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-[#F6F4F0] drop-shadow-md">
-            {heroData.portfolioTitle}
-          </h2>
-          <p className="text-[#B59A6D] tracking-[0.2em] uppercase text-xs md:text-sm mt-3">
-            {heroData.portfolioSubtitle}
+        <header ref={heroContentRef} className="absolute z-20 text-center px-4 md:px-12 max-w-6xl mx-auto flex flex-col items-center justify-center w-full">
+          <h1 className="hero-anim-item text-4xl sm:text-5xl md:text-7xl lg:text-[5rem] font-light mb-6 leading-[1.05] text-[#F6F4F0] tracking-tighter drop-shadow-2xl">
+            {heroData.heading.part1} <br className="hidden md:block" />
+            <span className="italic font-serif text-[#B59A6D] ml-[0.2em] font-normal tracking-normal pr-2">
+              {heroData.heading.part2}
+            </span>
+          </h1>
+          <p className="hero-anim-item text-sm md:text-base lg:text-lg font-light tracking-wide mb-12 max-w-[95%] sm:max-w-[80%] md:max-w-2xl text-[#F6F4F0]/80 leading-relaxed mx-auto">
+            {heroData.subheading}
           </p>
-        </div>
-        
-        <div className="w-full pointer-events-auto">
-          <div ref={galleryRowRef} className="flex gap-4 md:gap-8 px-6 md:px-12 lg:px-24 w-max">
-            {heroData.galleryImages.map((item) => (
-              <article 
-                key={item.id} 
-                className="w-[80vw] md:w-[45vw] lg:w-[30vw] h-[50vh] md:h-[60vh] bg-[#F6F4F0]/5 backdrop-blur-sm border border-[#F6F4F0]/10 rounded-sm flex items-center justify-center transition-all hover:bg-[#F6F4F0]/10 cursor-pointer"
-                title={item.title}
-              >
-                <span className="text-[#F6F4F0]/50 font-serif italic text-lg">{item.title}</span>
-              </article>
-            ))}
+          <div className="hero-anim-item">
+            <a href={heroData.ctaButton.link} title={heroData.ctaButton.text} className="inline-block border border-[#F6F4F0]/40 text-[#F6F4F0] hover:bg-[#F6F4F0] hover:text-[#2A2A2A] px-10 py-4 uppercase tracking-[0.3em] text-xs font-medium transition-colors duration-500 rounded-sm">
+              {heroData.ctaButton.text}
+            </a>
+          </div>
+        </header>
+
+        <div ref={portfolioHeaderRef} className="absolute inset-0 z-30 pointer-events-none opacity-0 flex items-center justify-center">
+          {/* BARRA: w-full (ponta a ponta), padding Y maior, flex-col para centralizar textos um em cima do outro, border-y */}
+          <div
+            ref={portfolioTitleGroupRef}
+            className="absolute z-10 flex flex-col items-center justify-center w-full py-6 md:py-6 will-change-transform border-y border-transparent"
+          >
+            {/* O CONTEÚDO QUE VAI DIMINUIR DE TAMANHO */}
+            <div className="inner-title-content flex flex-col items-center text-center">
+              <h2 className="text-3xl md:text-4xl font-light text-[#F6F4F0] tracking-tight leading-none drop-shadow-md">
+                {heroData.portfolioTitle}
+              </h2>
+              <p className="text-[#B59A6D] tracking-[0.3em] uppercase text-[10px] md:text-xs font-medium mt-3">
+                {heroData.portfolioSubtitle}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
+        <div className="absolute inset-0 z-20 flex flex-col justify-center pointer-events-none">
+          <div className="w-full h-full flex items-center overflow-hidden pointer-events-auto">
+            <div ref={galleryRowRef} className="flex gap-4 md:gap-10 px-[7.5vw] md:px-16 w-max will-change-transform h-full items-center">
+              {heroData.galleryImages.map((item, index) => (
+                <GalleryItem key={item.id} item={item} index={index} total={heroData.galleryImages.length} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div ref={progressBarRef} className="absolute bottom-0 left-0 h-[2px] bg-[#B59A6D] z-40 origin-left scale-x-0 w-full" />
+      </div>
     </section>
   );
 }

@@ -1,56 +1,65 @@
 'use client';
-import { useEffect, useRef, useMemo } from 'react';
+
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import { aboutData } from '@/data/aboutData';
 
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
 export default function AboutSection() {
   const containerRef = useRef(null);
+  const imageContainerRef = useRef(null);
   const photo1Ref = useRef(null);
   const photo2Ref = useRef(null);
 
-  const subtitleWords = useMemo(() => aboutData.subtitle.split(" "), []);
-  const titleWords = useMemo(() => aboutData.title.split(" "), []);
-  const paragraphWords = useMemo(() => aboutData.paragraph.split(" "), []);
-
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger);
+    }
+
     let ctx = gsap.context(() => {
-      
-      gsap.set(photo2Ref.current, { autoAlpha: 0 });
+      if (!containerRef.current) return;
+
+      if (photo2Ref.current) gsap.set(photo2Ref.current, { autoAlpha: 0 });
+
+      const textElements = gsap.utils.toArray('.about-anim-item');
 
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
-          start: "top 80%", 
-          end: "bottom 40%", 
+          // Sincronia Perfeita: Começa a animação quando o topo do About 
+          // encosta em 95% da tela (logo após o Hero terminar de clarear)
+          start: "top 95%", 
+          end: "bottom 30%", 
           scrub: 1, 
         }
       });
 
-      tl.fromTo(photo1Ref.current, 
-        { autoAlpha: 0, y: 30 }, 
-        { autoAlpha: 1, y: 0, duration: 1, ease: "power2.out" },
-        0 
-      );
+      // ORDEM EXATA CONFORME SOLICITADO:
 
-      tl.fromTo('.reveal-title', 
-        { opacity: 0, y: 10 }, 
-        { opacity: 1, y: 0, duration: 1.5, stagger: 0.1, ease: "none" },
-        0
-      );
+      // 1. A foto 1 aparece primeiro
+      if (imageContainerRef.current) {
+        tl.fromTo(imageContainerRef.current, 
+          { autoAlpha: 0, y: 100 }, 
+          { autoAlpha: 1, y: 0, duration: 1.5, ease: "power2.out", force3D: true }, 0 
+        );
+      }
 
-      tl.fromTo('.reveal-word', 
-        { opacity: 0 }, 
-        { opacity: 1, duration: 2, stagger: 0.05, ease: "none" },
-        0.5 
-      );
+      // 2. Os textos aparecem logo em seguida gradativamente
+      if (textElements.length > 0) {
+        tl.fromTo(textElements, 
+          { autoAlpha: 0, y: 50 }, 
+          { autoAlpha: 1, y: 0, duration: 1.5, stagger: 0.3, ease: "power2.out", force3D: true }, 0.5
+        );
+      }
 
-      tl.to(photo1Ref.current, { autoAlpha: 0, duration: 1.5, ease: "power2.inOut" }, 1.5);
-      tl.to(photo2Ref.current, { autoAlpha: 1, duration: 1.5, ease: "power2.inOut" }, 1.5);
+      // 3. Ocorre o switch de foto de forma cruzada (crossfade)
+      if (photo1Ref.current && photo2Ref.current) {
+        tl.to(photo1Ref.current, { autoAlpha: 0, duration: 1, ease: "power2.inOut" }, 2.5);
+        tl.to(photo2Ref.current, { autoAlpha: 1, duration: 1, ease: "power2.inOut" }, 2.5);
+      }
+      
+      // 4. O scroll para o próximo layer ocorrerá naturalmente ao final dessa timeline
+      // pois o usuário continuará rolando a página para baixo.
 
     }, containerRef);
 
@@ -58,45 +67,41 @@ export default function AboutSection() {
   }, []);
 
   return (
-    // A MÁGICA AQUI: min-h-[100svh]
-    <section ref={containerRef} className="relative w-full min-h-[100svh] py-24 bg-primary flex items-center justify-center overflow-hidden">
-      
-      <div className="max-w-7xl mx-auto w-full px-6 md:px-12 lg:px-24 flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-24 h-full">
+    <section 
+      ref={containerRef} 
+      className="relative w-full h-[100svh] py-24 flex items-center justify-center overflow-hidden bg-[#F6F4F0]"
+    >
+      <div className="max-w-7xl mx-auto w-full px-6 md:px-12 lg:px-24 flex flex-col md:flex-row items-center justify-between gap-16 lg:gap-24 h-full">
         
-        <div className="relative w-full md:w-1/2 h-[50vh] md:h-[70vh] flex items-center justify-center">
+        {/* CONTAINER DA IMAGEM */}
+        <div 
+          ref={imageContainerRef} 
+          className="relative w-full md:w-5/12 h-[55vh] md:h-[75vh] rounded-sm overflow-hidden bg-[#2A2A2A]/5 border border-black/5 shadow-2xl invisible will-change-transform transform-gpu"
+        >
+          <div className="absolute inset-0 bg-black/5 z-10 pointer-events-none mix-blend-overlay"></div>
+          
           <div ref={photo1Ref} className="absolute inset-0 flex items-center justify-center invisible">
-            <img src={aboutData.images.photo1.src} alt={aboutData.images.photo1.alt} className="w-full h-full object-contain drop-shadow-2xl" />
+            <img src={aboutData.images.photo1.src} alt={aboutData.images.photo1.alt} className="w-full h-full object-cover will-change-transform scale-110" />
           </div>
+          
           <div ref={photo2Ref} className="absolute inset-0 flex items-center justify-center invisible">
-            <img src={aboutData.images.photo2.src} alt={aboutData.images.photo2.alt} className="w-full h-full object-contain drop-shadow-2xl" />
+            <img src={aboutData.images.photo2.src} alt={aboutData.images.photo2.alt} className="w-full h-full object-cover will-change-transform scale-110" />
           </div>
         </div>
         
-        <div className="w-full md:w-1/2 flex flex-col justify-center">
-          <div className="mb-8">
-            <h2 className="text-[10px] md:text-xs uppercase tracking-[0.4em] text-tertiary mb-6 font-medium">
-              {subtitleWords.map((word, index) => (
-                <span key={`sub-${index}`} className="reveal-title inline-block opacity-0 mr-[0.4em]">
-                  {word}
-                </span>
-              ))}
+        {/* CONTAINER DE TEXTOS */}
+        <div className="w-full md:w-6/12 flex flex-col justify-center">
+          <div className="mb-10">
+            <h2 className="about-anim-item text-[10px] md:text-xs uppercase tracking-[0.4em] text-[#B59A6D] mb-6 font-medium invisible">
+              {aboutData.subtitle}
             </h2>
-            <h3 className="text-4xl md:text-5xl lg:text-6xl font-extralight text-secondary leading-[1.1] tracking-tight">
-              {titleWords.map((word, index) => (
-                <span key={`title-${index}`} className="reveal-title inline-block opacity-0 mr-[0.25em]">
-                  {word}
-                </span>
-              ))}
+            <h3 className="about-anim-item text-4xl md:text-5xl lg:text-6xl font-extralight text-[#2A2A2A] leading-[1.1] tracking-tight invisible">
+              {aboutData.title}
             </h3>
           </div>
-          
           <div className="space-y-6">
-            <p className="text-base md:text-lg lg:text-xl font-light leading-loose text-secondary/80">
-              {paragraphWords.map((word, index) => (
-                <span key={`para-${index}`} className="reveal-word inline-block opacity-0 mr-[0.25em]">
-                  {word}
-                </span>
-              ))}
+            <p className="about-anim-item text-base md:text-lg lg:text-xl font-light leading-relaxed text-[#2A2A2A]/80 invisible">
+              {aboutData.paragraph}
             </p>
           </div>
         </div>
