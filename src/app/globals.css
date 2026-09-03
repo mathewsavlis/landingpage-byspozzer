@@ -32,3 +32,22 @@
     font-family: 'Cormorant Garamond', serif;
   }
 }
+
+/* BLINDAGEM PARA VÍDEOS DE BACKGROUND NO MOBILE */
+video::-webkit-media-controls {
+    display: none !important;
+}
+
+video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+}
+
+video::-webkit-media-controls-play-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+}
+
+video {
+    pointer-events: none !important;
+}

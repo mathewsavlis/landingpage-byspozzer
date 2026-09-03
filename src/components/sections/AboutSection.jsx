@@ -36,7 +36,7 @@ export default function AboutSection() {
 
       // ORDEM EXATA CONFORME SOLICITADO:
 
-      // 1. A foto 1 aparece primeiro
+      // A foto 1 aparece primeiro
       if (imageContainerRef.current) {
         tl.fromTo(imageContainerRef.current, 
           { autoAlpha: 0, y: 100 }, 
@@ -44,7 +44,7 @@ export default function AboutSection() {
         );
       }
 
-      // 2. Os textos aparecem logo em seguida gradativamente
+      // Os textos aparecem
       if (textElements.length > 0) {
         tl.fromTo(textElements, 
           { autoAlpha: 0, y: 50 }, 
@@ -52,10 +52,10 @@ export default function AboutSection() {
         );
       }
 
-      // 3. Ocorre o switch de foto de forma cruzada (crossfade)
+      // CORREÇÃO: Switch das fotos puxado para o segundo 1.8 (Logo após o texto aparecer)
       if (photo1Ref.current && photo2Ref.current) {
-        tl.to(photo1Ref.current, { autoAlpha: 0, duration: 1, ease: "power2.inOut" }, 2.5);
-        tl.to(photo2Ref.current, { autoAlpha: 1, duration: 1, ease: "power2.inOut" }, 2.5);
+        tl.to(photo1Ref.current, { autoAlpha: 0, duration: 0.8, ease: "power2.inOut" }, 1.8);
+        tl.to(photo2Ref.current, { autoAlpha: 1, duration: 0.8, ease: "power2.inOut" }, 1.8);
       }
       
       // 4. O scroll para o próximo layer ocorrerá naturalmente ao final dessa timeline

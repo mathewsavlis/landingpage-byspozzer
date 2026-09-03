@@ -45,11 +45,11 @@ export default function ServiceSection() {
 
   return (
     // A MÁGICA AQUI: min-h-[100svh]
-    <section ref={containerRef} className="relative w-full min-h-[100svh] py-32 bg-[#0A0A0A] flex items-center justify-center overflow-hidden">
+    <section ref={containerRef} className="relative w-full min-h-[100svh] py-32 bg-[#0A0A0A] flex items-center justify-center overflow-hidden -mt-[1px]">
       
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <video 
-          src="/background-services.mp4" 
+          src="/landingpage-byspozzer/background-services.mp4" 
           autoPlay 
           muted 
           loop 
