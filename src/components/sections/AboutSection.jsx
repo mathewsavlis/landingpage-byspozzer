@@ -40,7 +40,7 @@ export default function AboutSection() {
       if (imageContainerRef.current) {
         tl.fromTo(imageContainerRef.current, 
           { autoAlpha: 0, y: 100 }, 
-          { autoAlpha: 1, y: 0, duration: 1.5, ease: "power2.out", force3D: true }, 0 
+          { autoAlpha: 1, y: 0, duration: 1, ease: "power2.out", force3D: true }, 0 
         );
       }
 
@@ -54,7 +54,7 @@ export default function AboutSection() {
 
       // CORREÇÃO: Switch das fotos puxado para o segundo 1.8 (Logo após o texto aparecer)
       if (photo1Ref.current && photo2Ref.current) {
-        tl.to(photo1Ref.current, { autoAlpha: 0, duration: 0.8, ease: "power2.inOut" }, 1.8);
+        tl.to(photo1Ref.current, { autoAlpha: 0, duration: 0.8, ease: "power2.inOut" }, 0.3);
         tl.to(photo2Ref.current, { autoAlpha: 1, duration: 0.8, ease: "power2.inOut" }, 1.8);
       }
       
